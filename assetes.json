@@ -1,0 +1,89 @@
+[
+    {
+      "id": "CIS-001",
+      "brand": "Cisco",
+      "type": "Switch",
+      "model": "Catalyst 9200",
+      "ports": 48,
+      "speed": "1Gbps",
+      "status": "Available"
+    },
+    {
+      "id": "CIS-002",
+      "brand": "Cisco",
+      "type": "Switch",
+      "model": "Catalyst 2960-X",
+      "ports": 24,
+      "speed": "1Gbps",
+      "status": "Pending"
+    },
+    {
+      "id": "CIS-003",
+      "brand": "Cisco",
+      "type": "Router",
+      "model": "ISR 4331",
+      "interfaces": 3,
+      "speed": "2Gbps",
+      "status": "Borrowed"
+    },
+    {
+      "id": "CIS-004",
+      "brand": "Cisco",
+      "type": "Modem",
+      "model": "DPC3008",
+      "speed": "340Mbps",
+      "status": "Disabled"
+    },
+    {
+      "id": "CIS-005",
+      "brand": "Cisco",
+      "type": "Access Point",
+      "model": "Aironet 1850",
+      "frequency": "2.4GHz/5GHz",
+      "status": "Available"
+    },
+    {
+      "id": "HUA-001",
+      "brand": "Huawei",
+      "type": "Switch",
+      "model": "S5720-52X-SI-AC",
+      "ports": 52,
+      "speed": "10Gbps",
+      "status": "Available"
+    },
+    {
+      "id": "HUA-002",
+      "brand": "Huawei",
+      "type": "Switch",
+      "model": "CloudEngine S6730",
+      "ports": 48,
+      "speed": "10Gbps",
+      "status": "Borrowed"
+    },
+    {
+      "id": "HUA-003",
+      "brand": "Huawei",
+      "type": "Router",
+      "model": "AR6120",
+      "interfaces": 4,
+      "speed": "2Gbps",
+      "status": "Pending"
+    },
+    {
+      "id": "HUA-004",
+      "brand": "Huawei",
+      "type": "Modem",
+      "model": "HG8245H",
+      "speed": "1Gbps",
+      "status": "Available"
+    },
+    {
+      "id": "HUA-005",
+      "brand": "Huawei",
+      "type": "Access Point",
+      "model": "AirEngine 5760-51",
+      "frequency": "2.4GHz/5GHz",
+      "status": "Disabled"
+    }
+  ]
+  

@@ -1,0 +1,48 @@
+{
+    "users": [
+      {
+        "id": 1000,
+        "role": "staff",
+        "username": "alice.johnson",
+        "name": "Alice Johnson",
+        "password": "staff123"
+      },
+      {
+        "id": 1001,
+        "role": "staff",
+        "username": "bob.smith",
+        "name": "Bob Smith",
+        "password": "staff456"
+      },
+      {
+        "id": 2000,
+        "role": "lecturer",
+        "username": "ian.black",
+        "name": "Dr. Ian Black",
+        "password": "lecturer123"
+      },
+      {
+        "id": 2001,
+        "role": "lecturer",
+        "username": "julia.clarke",
+        "name": "Dr. Julia Clarke",
+        "password": "lecturer456"
+      },
+      {
+        "id": 3000,
+        "role": "student",
+        "username": "alex.carter",
+        "name": "Alex Carter",
+        "password": "student123"
+      },
+      {
+        "id": 3001,
+        "role": "student",
+        "username": "bella.rivera",
+        "name": "Bella Rivera",
+        "password": "student456"
+      }
+    ]
+  }
+  
+  
