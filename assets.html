@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icon -->
+    <link rel="icon" href="../public/assets/images/logo/favicon.ico" type="image/x-icon">
+
+    <!-- Lottie Animations -->
+    <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../public/css/styles.css">
+
+    <title>Request Asset</title>
+    <style>
+        .btn,
+        .role-btn {
+            background: var(--primary-color);
+            color: var(--quaternary-color);
+            margin-top: 10px;
+            transition: all ease-in-out .4s;
+        }
+
+        .btn:hover,
+        .role-btn:hover {
+            background: var(--quaternary-color);
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid d-flex justify-content-between align-items-center p-2">
+            <div class="d-flex align-items-center">
+                <img src="../public/assets/images/logo/logo.png" alt="University Logo" class="logo-img">
+            </div>
+
+            <div class="text-end">
+                <div class="navbar-text" id="userInfo">Loading...</div>
+                <a href="#" class="logout" onclick="logoutUser()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <nav class="navbar navbar-dark" id="nav">
+        <div class="container-fluid ms-5 me-5">
+            <a class="navbar-brand" href="#">Asset Borrowing System</a>
+            <ul class="nav">
+                <li class="nav-item"><a href="/dashboard" class="nav-link">Asset List</a></li>
+                <li class="nav-item" id="request" style="display: none;"><a class="nav-link" href="/request">Request
+                        Asset</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/assets">Request Status</a></li>
+                <li class="nav-item" id="dashboardLink" style="display:none;">
+                    <a href="/list" class="nav-link">Dashboard</a>
+                </li>
+                <li class="nav-item" id="returnAssetsLink" style="display: none;">
+                    <a class="nav-link" href="/return">Return Assets</a>
+                </li>
+                <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const username = sessionStorage.getItem("username") || "Guest";
+            const userId = sessionStorage.getItem("userId") || "";
+            let userRole = sessionStorage.getItem("userRole") || "";
+
+            let userRoleFinal = ""; // Declare it here
+
+            if (userRole == "lecturer") {
+                userRoleFinal = "Arjan."; // Assign the value here
+                document.getElementById("userInfo").innerHTML = `${userRoleFinal} ${username}`;
+                document.getElementById('dashboardLink').style.display = 'block';
+            } else if (userRole == "staff") {
+                userRoleFinal = "Miss.";
+                document.getElementById("userInfo").innerHTML = `${userRoleFinal} &nbsp;${username}`;
+            } else if (userRole == "student") {
+                document.getElementById("userInfo").innerHTML = `${userId} &nbsp; ${username}`;
+                document.getElementById('request').style.display = 'block';
+            }
+
+            if (userRole == 'staff') {
+                document.getElementById('returnAssetsLink').style.display = 'block';
+                document.getElementById('dashboardLink').style.display = 'block';
+            }
+
+        });
+
+        function logoutUser() {
+            const role = sessionStorage.getItem("selectedRole") || "user";
+            sessionStorage.clear();
+            window.location.href = `/login?role=${role}`;
+        }
+    </script>
+    <!-- End of Navbar -->
+
+    <!-- Request Asset -->
+    <section id="req-asset">
+        <h2 class="title d-none">Categories</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <form id="categoryForm" style="display: none;">
+                    <div id="categorySection" class="mb-3"></div>
+                    <div class="card d-none p-5 w-50 mb-3">
+                        <div class="mb-3">
+                            <label for="categoryName" class="form-label">Category Name</label>
+                            <input type="text" id="categoryName" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Add Category</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-8">
+                
+            </div>
+        </div>
+
+        <table class="table table-bordered mb-5 d-none" id="categoryTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Category Name</th>
+                    <th>Updated Date</th>
+                    <th>Created Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Categories will be dynamically added here -->
+            </tbody>
+        </table>
+
+        <h2 class="title">Requested Assets</h3>
+            <div class="container-fluid">
+                <div id="addButton"></div>
+
+                <!-- Student Table -->
+                <table id="studentTable" class="table table-bordered table-hover table-striped table-light" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Asset Name</th>
+                            <th>Status</th>
+                            <th>Return Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody"></tbody>
+                </table>
+
+                <table class="table table-bordered table-light table-hover table-striped mt-4" id="borrowRequestsTable"
+                    style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Asset</th>
+                            <th>Borrow Date</th>
+                            <th>Return Date</th>
+                            <th>Status</th>
+                            <th>Student Reason</th>
+                            <th>Approved by</th>
+                            <th>Lecturer Reason</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="borrowRequestsBody"></tbody>
+                </table>
+
+
+                <table class="table table-light table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th id="action">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetTableBody">
+                        <!-- Rows will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="loader">
+                <div class="spinner"></div>
+            </div>
+
+            <script>
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        document.getElementById('loader').style.display = 'none';
+                        document.getElementById('content').style.display = 'block';
+                    }, 500);
+                });
+            </script>
+    </section>
+    <!-- End of Request Asset -->
+
+    <!-- Model Add Assets -->
+    <div class="modal fade" id="addAssetModal" tabindex="-1" aria-labelledby="addAssetModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-dark ms-2" id="addAssetModalLabel">Add New Asset</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addAssetForm">
+                        <div class="w-100 d-flex justify-content-center">
+                            <dotlottie-player
+                                src="https://lottie.host/595dbb1a-bf96-422c-9257-6631692d0ff0/d5If1neWZU.lottie"
+                                background="transparent" speed="1" style="width: 300px; height: 300px" loop
+                                autoplay></dotlottie-player>
+                        </div>
+                        <div class="input-group input-group mb-3">
+                            <input type="file" class="form-control" id="assetName" required>
+                            <span class="input-group-text">Asset Image</span>
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">Asset Name</span>
+                            <input type="text" class="form-control" id="assetName" required>
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">Status</span>
+                            <select class="form-control" id="assetStatus">
+                                <option value="Available">Available</option>
+                                <option value="Disabled">Disabled</option>
+                            </select>
+                        </div>
+                        <div class="w-100 d-flex justify-content-end">
+                            <button type="submit" class="btn role-btn me-0">Add Asset</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End of Model Add Assets -->
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+    <!-- JS -->
+    <script>
+        const username = sessionStorage.getItem("username") || "Guest";
+        const userId = sessionStorage.getItem("userId") || "";
+        const userRole = sessionStorage.getItem("userRole") || "";
+
+        let userRoleFinal = "";
+
+        // Update the navbar user info
+        if (userRole === "lecturer") {
+            userRoleFinal = "Arjan.";
+            document.getElementById("userInfo").innerHTML = `${userRoleFinal} ${username}`;
+            document.getElementById('dashboardLink').style.display = 'block';
+        } else if (userRole === "staff") {
+            userRoleFinal = "Miss.";
+            document.getElementById("userInfo").innerHTML = `${userRoleFinal} &nbsp;${username}`;
+            document.getElementById('returnAssetsLink').style.display = 'block';
+            document.getElementById('dashboardLink').style.display = 'block';
+        } else if (userRole === "student") {
+            document.getElementById("userInfo").innerHTML = `${userId} &nbsp; ${username}`;
+            document.getElementById('request').style.display = 'block';
+        }
+
+        // Now show/hide tables based on roles
+        const assetTable = document.querySelector('#assetTableBody').closest('table');
+        const borrowRequestTable = document.getElementById('borrowRequestsTable');
+        const stdTabe = document.getElementById('studentTable');
+
+        if (userRole === 'lecturer') {
+            assetTable.style.display = 'none';
+            borrowRequestTable.style.display = 'table';
+            stdTabe.style.display = 'none';
+        } else if (userRole === 'staff') {
+            assetTable.style.display = 'table';
+            borrowRequestTable.style.display = 'none';
+            categoryForm.style.display = 'block';
+            categoryTable.style.display = 'table';
+            stdTabe.style.display = 'none';
+        } else if (userRole === 'student') {
+            assetTable.style.display = 'none';
+            borrowRequestTable.style.display = 'none';
+            stdTabe.style.display = 'table';
+        }
+
+        function showRequestButton(userRole) {
+            const rows = document.querySelectorAll('tbody tr');
+            const addButtonContainer = document.getElementById('addButton');
+
+            addButtonContainer.innerHTML = '';  // Clear "Add Asset" Button
+
+            rows.forEach(row => {
+                const actionCell = row.querySelector('td:last-child');
+                actionCell.innerHTML = ''; // Clear existing actions before updating
+
+                if (userRole === 'lecturer') {
+                    const status = row.querySelector('td:nth-child(6)').innerText.trim().toLowerCase();
+                    const lecReason = row.querySelector('td:nth-child(8)').innerText.trim(); // Lecturer Reason column
+
+                    if (status === 'pending') {
+                        actionCell.innerHTML = `
+                            <button class="btn btn-success btn-sm" onclick="approveRequest(this)">Approve</button>
+                            <button class="btn btn-danger btn-sm" onclick="disapproveRequest(this)">Disapprove</button>
+                        `;
+                    } else {
+                        actionCell.innerHTML = `<span class="text-muted">-</span>`;
+                    }
+                }
+
+                else if (userRole === 'student') {
+                    const status = row.querySelector('.badge').innerText.trim();
+                    if (status === 'Available') {
+                        actionCell.innerHTML = `<button class="btn btn-primary btn-sm" onclick="showRequestModal(this)">Request</button>`;
+                    } else {
+                        actionCell.innerHTML = '—';
+                    }
+                } else if (userRole === 'staff') {
+                    addButtonContainer.innerHTML = `
+                        <a href="/add-asset" class="btn btn-primary btn-sm mb-3">
+                            Add Asset
+                        </a>
+                        <a href="/add-category" class="btn btn-primary btn-sm mb-3">
+                            Add Category
+                        </a>
+                    `;
+
+                    rows.forEach(row => {
+                        const statusCell = row.querySelector('td:nth-child(3) .badge');
+                        const actionCell = row.querySelector('td:last-child');
+                        const assetId = row.querySelector('td:first-child').innerText.trim();
+                        const currentStatus = statusCell ? statusCell.innerText.toLowerCase().trim() : "";
+
+                        if (currentStatus === "available") {
+                            actionCell.innerHTML = `
+                <button class="btn btn-warning btn-sm me-1" onclick="editAsset(${assetId})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="toggleAssetStatus('${assetId}', 'disable')">Disable</button>
+            `;
+                        } else if (currentStatus === "disabled") {
+                            actionCell.innerHTML = `
+                <button class="btn btn-success btn-sm" onclick="toggleAssetStatus('${assetId}', 'enable')">Enable</button>
+            `;
+                        } else {
+                            actionCell.innerHTML = '—';
+                        }
+                    });
+                }
+            });
+
+            console.log("Updated UI for role:", userRole);
+        }
+
+        function approveRequest(button) {
+            const row = button.closest('tr');
+            const requestId = row.children[0].innerText;
+            const lecturerId = sessionStorage.getItem('userId');
+
+            Swal.fire({
+                title: 'Approve Request',
+                text: 'You may leave a reason (optional)',
+                icon: 'success',
+                input: 'textarea',
+                inputPlaceholder: 'Enter reason (optional)...',
+                inputAttributes: {
+                    'aria-label': 'Type your reason here'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Approve',
+                cancelButtonText: 'Cancel',
+                preConfirm: (reason) => {
+                    return fetch(`/api/borrow-requests/${requestId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            status: 'approved',
+                            lecturer_reason: reason,
+                            lecturer_id: lecturerId
+                        })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (!data.success) throw new Error(data.message);
+                            return data;
+                        })
+                        .catch(error => {
+                            Swal.showValidationMessage(`Request failed: ${error}`);
+                        });
+                }
+            }).then(result => {
+                if (result.isConfirmed) {
+                    Swal.fire('Approved!', 'The request has been approved.', 'success');
+                    fetchAndDisplayRequests(); // Refresh table
+                }
+            });
+        }
+
+        function disapproveRequest(button) {
+            const row = button.closest('tr');
+            const requestId = row.children[0].innerText;
+            const lecturerId = sessionStorage.getItem('userId');
+
+            Swal.fire({
+                title: 'Disapprove Request',
+                text: 'Please provide a reason for disapproval',
+                icon: 'error',
+                input: 'textarea',
+                inputPlaceholder: 'Enter detailed reason...',
+                inputAttributes: {
+                    'aria-label': 'Type your reason here'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Disapprove',
+                preConfirm: (reason) => {
+                    return fetch(`/api/borrow-requests/${requestId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            status: 'rejected',
+                            lecturer_reason: reason,
+                            lecturer_id: lecturerId
+                        })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (!data.success) throw new Error(data.message);
+                            return data;
+                        })
+                        .catch(error => {
+                            Swal.showValidationMessage(`Request failed: ${error}`);
+                        });
+                }
+            }).then(result => {
+                if (result.isConfirmed) {
+                    Swal.fire('Rejected!', 'The request has been rejected.', 'success');
+                    fetchAndDisplayRequests(); // Refresh table
+                }
+            });
+        }
+
+        function editAsset(assetId) {
+            window.location.href = `/edit-asset?asset_id=${assetId}`;
+        }
+
+
+        function toggleAssetStatus(assetId, action) {
+            const actionText = action === 'enable' ? 'Enable' : 'Disable';
+            const swalIcon = action === 'enable' ? 'success' : 'warning';
+
+            Swal.fire({
+                title: `${actionText} this asset?`,
+                text: `Are you sure you want to ${actionText.toLowerCase()} asset?`,
+                icon: swalIcon,
+                showCancelButton: true,
+                confirmButtonText: `Yes, ${actionText.toLowerCase()} it`,
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const url = action === 'enable'
+                        ? `/enable-asset/${assetId}`
+                        : `/disable-asset/${assetId}`;
+
+                    fetch(url, { method: 'PUT' })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    title: `${actionText}d!`,
+                                    text: `Asset ${actionText.toLowerCase()}d successfully.`,
+                                    icon: 'success',
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                    toast: true,
+                                    position: 'top-end'
+                                });
+                                fetchAssetData(); // Refresh table
+                            } else {
+                                Swal.fire('Error', data.error || 'Operation failed.', 'error');
+                            }
+                        })
+                        .catch(err => {
+                            console.error(`Error ${action} asset:`, err);
+                            Swal.fire('Error', 'Server error occurred.', 'error');
+                        });
+                }
+            });
+        }
+
+
+        // Function to get badge class based on asset status
+        function getBadgeClass(status) {
+            switch (status) {
+                case "available":
+                    return "bg-success";
+                case "borrowed":
+                    return "bg-danger";
+                case "pending":
+                    return "bg-warning";
+                case "disabled":
+                    return "bg-secondary";
+                default:
+                    return "bg-light";
+            }
+        }
+
+        // Function to capitalize status
+        function capitalizeStatus(status) {
+            return status.charAt(0).toUpperCase() + status.slice(1);
+        }
+
+
+        const emailDomain = "@lamduan.mfu.ac.th";
+        const userEmail = sessionStorage.getItem("userId") + emailDomain; // Ensure userId is correctly set before this
+        console.log("User Email:", userEmail); // Debugging
+
+        async function populateAssetTable(assets, userEmail, userRole) {
+            const tableBody = document.querySelector("#assetTableBody");
+            tableBody.innerHTML = '';
+
+            if (!Array.isArray(assets) || assets.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No assets available</td></tr>';
+                return;
+            }
+
+            const checkedAssets = await Promise.all(assets.map(async asset => {
+                const response = await fetch(`/check-request?email=${userEmail}&assetId=${asset.asset_id}`);
+                const data = await response.json();
+                return { ...asset, has_pending_request: data.exists === true };
+            }));
+
+            checkedAssets.forEach(asset => {
+                if (!asset) return;
+                const row = document.createElement("tr");
+                const imagePath = asset.image_path && asset.image_path !== '/public/'
+                    ? asset.image_path
+                    : 'assets/images/assetImages/default-image.jpg';
+
+                row.innerHTML = `
+                    <td>${asset.asset_id}</td>
+                    <td class="asset-name">
+                        <div class="asset-icon">
+                            <img src="${imagePath}" alt="${asset.name}" class="img-fluid">
+                        </div>
+                        <p class="ms-1">${asset.name}</p>
+                    </td>
+                    <td><span class="badge ${getBadgeClass(asset.status)}">${capitalizeStatus(asset.status)}</span></td>
+                    <td></td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+
+            // ✅ Fix: Move this here!
+            showRequestButton(userRole.toLowerCase());
+        }
+
+
+        // Redirect to the next page and pass the asset_id
+        function goToRequestPage(asset_id) {
+            // Redirect to a new page with asset_id in URL as a query parameter
+            window.location.href = `/requestPage?asset_id=${asset_id}`;
+        }
+
+        // Function to fetch data from the API
+        function fetchAssetData() {
+            const userRole = sessionStorage.getItem("userRole") || "guest"; // Ensure role is accessible
+            fetch('/api/assets')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Fetched asset data:', data);
+                    populateAssetTable(data, userEmail, userRole); // Pass role
+                })
+                .catch(error => {
+                    console.error('Error fetching asset data:', error);
+                });
+        }
+
+        async function fetchAndDisplayRequests() {
+            const role = sessionStorage.getItem("userRole");
+            if (role !== "lecturer") return;
+
+            try {
+                const response = await fetch('/api/borrow-requests');
+                const result = await response.json();
+
+                if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+                    document.getElementById('borrowRequestsTable').style.display = 'table';
+                    const tbody = document.getElementById('borrowRequestsBody');
+                    tbody.innerHTML = '';
+
+                    result.data.forEach(req => {
+                        const row = document.createElement('tr');
+
+                        const statusBadge = {
+                            approved: `<span class="badge bg-success fw-normal">Approved</span>`,
+                            pending: `<span class="badge bg-warning text-dark fw-normal">Pending</span>`,
+                            rejected: `<span class="badge bg-danger fw-normal">Rejected</span>`
+                        };
+
+                        row.innerHTML = `
+                            <td class='d-none'>${req.request_id}</td>
+                            <td>${req.student_name}</td>
+                            <td>${req.asset_name}</td>
+                            <td>${new Date(req.borrow_date).toLocaleDateString()}</td>
+                            <td>${new Date(req.return_date).toLocaleDateString()}</td>
+                            <td>${statusBadge[req.status.toLowerCase()] || req.status}</td>
+                            <td>${req.student_reason || '—'}</td>
+                            <td>${req.lecturer_name || '—'}</td>
+                            <td>${req.lecturer_reason || '—'}</td>
+                            <td></td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    showRequestButton(role);
+                } else {
+                    console.log("No borrow requests found.");
+                }
+            } catch (error) {
+                console.error("Error fetching borrow requests:", error);
+            }
+        }
+
+        async function fetchStudentRequests() {
+            const userId = sessionStorage.getItem("userId");
+            try {
+                const response = await fetch(`/api/borrow-requests-student?userId=${userId}`);
+                const result = await response.json();
+
+                if (result.success && Array.isArray(result.data)) {
+                    console.log("Fetched student data:", result.data); // Debug
+
+                    result.data.forEach(req => {
+                        const status = req.status?.toLowerCase();
+
+                        // Borrow Date (optional if you need it)
+                        const borrowDateStr = req.borrow_date?.split("T")[0];
+                        const borrowDate = borrowDateStr ? new Date(borrowDateStr) : null;
+                        const formattedBorrowDate = borrowDate && !isNaN(borrowDate)
+                            ? borrowDate.toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                            })
+                            : '—';
+
+                        // Only format return date if not rejected
+                        let formattedReturnDate = '—';
+                        if (status !== 'rejected') {
+                            const returnDateStr = req.return_date?.split("T")[0];
+                            const returnDate = returnDateStr ? new Date(returnDateStr) : null;
+                            formattedReturnDate = returnDate && !isNaN(returnDate)
+                                ? returnDate.toLocaleDateString('en-GB', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
+                                })
+                                : '—';
+                        }
+
+                        const statusBadge = getStatusBadge(req.status);
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class='d-none'>${req.request_id}</td>
+                            <td>${req.asset_name}</td>
+                            <td>${statusBadge}</td>
+                            <td>${formattedReturnDate}</td>
+                        `;
+                        studentTableBody.appendChild(row);
+                    });
+                } else {
+                    console.warn("No student data found or bad format:", result);
+                }
+            } catch (error) {
+                console.error("Error fetching student borrow requests:", error);
+            }
+        }
+
+        function getStatusBadge(status) {
+            const normalized = status.toLowerCase();
+            if (normalized === 'approved') {
+                return '<span class="badge bg-success fw-normal">Approved</span>';
+            } else if (normalized === 'rejected') {
+                return '<span class="badge bg-danger fw-normal">Rejected</span>';
+            } else {
+                return '<span class="badge bg-secondary fw-normal">Pending</span>';
+            }
+        }
+
+
+
+
+
+
+        window.onload = () => {
+            const userRole = sessionStorage.getItem("userRole");
+
+            if (userRole === "staff") {
+                fetchAssetData();
+            }
+
+            if (userRole === "lecturer") {
+                fetchAndDisplayRequests();
+            }
+
+            if (userRole === "student") {
+                fetchStudentRequests();
+            }
+        };
+
+
+
+    </script>
+</body>
+
+</html>

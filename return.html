@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Return Assets</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/public/css/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .table-container {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid d-flex justify-content-between align-items-center p-2">
+            <div class="d-flex align-items-center">
+                <img src="/assets/images/logo/logo.png" alt="University Logo" class="logo-img">
+            </div>
+            <div class="text-end">
+                <div class="navbar-text" id="userInfo">Loading...</div>
+                <a href="#" class="logout" onclick="logoutUser()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <nav class="navbar navbar-dark" id="nav">
+        <div class="container-fluid ms-5 me-5">
+            <a class="navbar-brand" href="#">Asset Borrowing System</a>
+            <ul class="nav">
+                <li class="nav-item"><a href="/dashboard" class="nav-link">Asset List</a></li>
+                <li class="nav-item" id="request" style="display: none;"><a class="nav-link" href="/request">Request Asset</a></li>
+                <li class="nav-item"><a class="nav-link" href="/assets">Request Status</a></li>
+                <li class="nav-item" id="dashboardlink" style="display:none;">
+                    <a href="/list" class="nav-link">Dashboard</a>
+                </li>
+                <li class="nav-item" id="returnAssetsLink" style="display: none;">
+                    <a class="nav-link active" href="/return">Return Assets</a>
+                </li>
+                <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section>
+        <h2 class="title">Return Assets</h2>
+        <div class="container mt-4">
+            <div class="table-container table-responsive">
+                <table class="table table-striped table-hover text-center">
+                    <thead>
+                        <tr>
+                            <th>Asset ID</th>
+                            <th>Name</th>
+                            <th>Borrowed By</th>
+                            <th>Borrow Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetsTable">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script>
+            document.addEventListener("DOMContentLoaded", function () {
+            const username = sessionStorage.getItem("username") || "Guest";
+            const userId = sessionStorage.getItem("userId") || "";
+            let userRole = sessionStorage.getItem("userRole") || ""; // Correct Key
+
+            let userRoleFinal = ""; // Declare the final formatted role
+
+            if (userRole === "lecturer") {
+                userRoleFinal = "Arjan.";
+                document.getElementById("userInfo").innerHTML = `${userRoleFinal} ${username}`;
+                document.getElementById('dashboardlink').style.display = 'block';
+            } else if (userRole === "staff") {
+                userRoleFinal = "Miss.";
+                document.getElementById("userInfo").innerHTML = `${userRoleFinal} &nbsp;${username}`;
+                document.getElementById('dashboardlink').style.display = 'block';
+            } else if (userRole === "student") {
+                document.getElementById("userInfo").innerHTML = `${userId} &nbsp; ${username}`;
+                document.getElementById('request').style.display = 'block';
+            }
+
+            if (userRole === 'staff') {
+                document.getElementById('returnAssetsLink').style.display = 'block';
+                fetchBorrowedAssets();
+            } else {
+                window.location.href = '/dashboard';
+            }
+        });
+
+        function logoutUser() {
+            fetch('/logout', {
+                method: 'POST'
+            })
+            .then(() => {
+                sessionStorage.clear();
+                window.location.href = '/';
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+            });
+        }
+
+        function fetchBorrowedAssets() {
+    fetch('/api/borrowed-assets')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(assets => {
+            const tableBody = document.getElementById('assetsTable');
+            tableBody.innerHTML = '';
+
+            if (assets.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No borrowed assets found</td></tr>';
+                return;
+            }
+
+            assets.forEach(asset => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${asset.asset_id}</td>
+                    <td>${asset.name}</td>
+                    <td>${asset.student_name}</td>
+                    <td>${asset.borrow_date}</td>
+                    <td>
+                        <button class="btn btn-success" 
+                                onclick="markAsReturned(${asset.asset_id})">
+                            Mark Returned
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching assets:', error);
+            document.getElementById('assetsTable').innerHTML = `
+                <tr><td colspan="5" class="text-center text-danger">
+                    Error loading borrowed assets
+                </td></tr>
+            `;
+        });
+}
+
+        function markAsReturned(assetId) {
+            if (!confirm("Are you sure you want to mark this asset as returned?")) {
+                return;
+            }
+
+            fetch('/api/return-asset', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({ 
+                    assetId: assetId,
+                    returnedBy: sessionStorage.getItem("userId")
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Return failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('Asset successfully marked as returned!');
+                    fetchBorrowedAssets();
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Return error:', error);
+                alert('Failed to mark asset as returned. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>

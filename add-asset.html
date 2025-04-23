@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Add Asset</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Icon -->
+    <link rel="icon" href="../public/assets/images/logo/favicon.ico" type="image/x-icon">
+
+    <!-- Lottie Animations -->
+    <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+
+    <!-- SweetAlert CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../public/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid d-flex justify-content-between align-items-center p-2">
+            <div class="d-flex align-items-center">
+                <img src="../public/assets/images/logo/logo.png" alt="University Logo" class="logo-img">
+            </div>
+
+            <div class="text-end">
+                <div class="navbar-text" id="userInfo">Loading...</div>
+                <a href="#" class="logout" onclick="logoutUser()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <nav class="navbar navbar-dark" id="nav">
+        <div class="container-fluid ms-5 me-5">
+            <a class="navbar-brand" href="#">Asset Borrowing System</a>
+            <ul class="nav">
+                <li class="nav-item"><a href="/dashboard" class="nav-link">Asset List</a></li>
+                <li class="nav-item"><a class="nav-link" href="/request">Request Asset</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/assets">Request Status</a></li>
+                <li class="nav-item" id="returnAssetsLink" style="display: none;">
+                    <a class="nav-link" href="/return">Return Assets</a>
+                </li>
+                <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-5 pt-4">
+        <h2 class="title mt-5 mb-4">Add Assets</h2>
+        <form id="addAssetForm" class="mb-5" enctype="multipart/form-data">
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="name" class="form-label text-dark">Asset Name</label>
+                        <input type="text" id="name" name="name" class="form-control" required />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label text-dark">Category</label>
+                        <select id="category_id" name="category_id" class="form-select" required></select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="status" class="form-label text-dark">Status</label>
+                        <select id="status" name="status" class="form-select" required>
+                            <option value="available">Available</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <div class="mb-3">
+                        <label for="description" class="form-label text-dark">Description</label>
+                        <textarea id="description" name="description" class="form-control"></textarea>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <div class="mb-3">
+                        <label for="image" class="form-label text-dark">Asset Image</label>
+                        <input type="file" id="image" name="image" class="form-control" accept="image/*" />
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success">Add Asset</button>
+            <a href="/assets" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+
+    <script>
+        // Load categories
+        document.addEventListener("DOMContentLoaded", async () => {
+            const categoryRes = await fetch("/api/categories");
+            const categories = await categoryRes.json();
+            const categorySelect = document.getElementById("category_id");
+            categories.forEach(cat => {
+                const option = document.createElement("option");
+                option.value = cat.category_id;
+                option.text = `${cat.category_id} - ${cat.category_name}`;
+                categorySelect.appendChild(option);
+            });
+        });
+
+        // Handle form submit
+        document.getElementById("addAssetForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+
+            // Assuming you store user ID in localStorage
+            const userId = localStorage.getItem("user_id");
+            formData.append("created_by", userId);
+
+            const res = await fetch('/add-asset', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await res.json();
+
+            if (result.success) {
+                Swal.fire("Success", "Asset added successfully!", "success").then(() => {
+                    window.location.href = "/assets";
+                });
+            } else {
+                Swal.fire("Error", result.error || "Something went wrong", "error");
+            }
+        });
+
+    </script>
+
+</body>
+
+</html>

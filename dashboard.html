@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/public/css/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid d-flex justify-content-between align-items-center p-2">
+            <div class="d-flex align-items-center">
+                <img src="/assets/images/logo/logo.png" alt="University Logo" class="logo-img">
+            </div>
+            <div class="text-end">
+                <div class="navbar-text" id="userInfo">Loading...</div>
+                <a href="#" class="logout" onclick="logoutUser()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <nav class="navbar navbar-dark" id="nav">
+        <div class="container-fluid ms-5 me-5">
+            <a class="navbar-brand" href="/dashboard">Asset Borrowing System</a>
+            <ul class="nav">
+                <li class="nav-item"><a href="/dashboard" class="nav-link active">Asset List</a></li>
+                <li class="nav-item" id="request" style="display:none;"><a class="nav-link" href="/request">Request Asset</a></li>
+                <li class="nav-item"><a class="nav-link" href="/assets">Request Status</a></li>
+                <li class="nav-item" id="dashboardlink" style="display:none;">
+                    <a href="/list" class="nav-link">Dashboard</a>
+                </li>
+                <li class="nav-item" id="returnAssetsLink" style="display: none;">
+                    <a class="nav-link" href="/return">Return Assets</a>
+                </li>
+                <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Asset Cards -->
+    <section id="dashboard">
+        <div class="container mt-4">
+            <h2 class="title mb-4">Browse Asset List</h2>
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" id="searchBar" placeholder="Search assets...">
+                </div>
+            </div>
+            <div class="row" id="assetsContainer">
+                <div class="col-12 text-center mt-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const username = sessionStorage.getItem("username") || "Guest";
+            const userId = sessionStorage.getItem("userId") || "";
+            let userRole = sessionStorage.getItem("userRole") || ""; // Correct Key
+
+            console.log("Loaded from sessionStorage:");
+        console.log("userId:", sessionStorage.getItem("userId"));
+        console.log("userRole:", sessionStorage.getItem("userRole"));
+            let userRoleFinal = ""; // Declare the final formatted role
+
+            if (userRole === "lecturer") {
+                userRoleFinal = "Arjan.";
+                document.getElementById("userInfo").innerHTML = `${userRoleFinal} ${username}`;
+                document.getElementById('dashboardlink').style.display = 'block';
+            } else if (userRole === "staff") {
+                userRoleFinal = "Miss.";
+                document.getElementById("userInfo").innerHTML = `${userRoleFinal} &nbsp;${username}`;
+                document.getElementById('dashboardlink').style.display = 'block';
+            } else if (userRole === "student") {
+                document.getElementById("userInfo").innerHTML = `${userId} &nbsp; ${username}`;
+                document.getElementById('request').style.display = 'block';
+            }
+
+            if (userRole === 'staff') {
+                document.getElementById('returnAssetsLink').style.display = 'block';
+            }
+            
+            fetchAssets();
+            document.getElementById('searchBar').addEventListener('input', searchAssets);
+        });
+
+        function fetchAssets() {
+            fetch('/dashboard/data')
+                .then(response => response.json())
+                .then(assets => renderAssets(assets))
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('assetsContainer').innerHTML = `
+                        <div class="col-12 text-center mt-5">
+                            <div class="alert alert-danger">Error loading assets</div>
+                        </div>`;
+                });
+        }
+
+        function renderAssets(assets) {
+            const container = document.getElementById('assetsContainer');
+            container.innerHTML = assets.length ? '' : `
+                <div class="col-12 text-center mt-5">
+                    <div class="alert alert-info">No assets found</div>
+                </div>`;
+            
+            assets.forEach(asset => {
+                const col = document.createElement('div');
+                col.className = 'col-sm-3 mb-3';
+                col.innerHTML = `
+                    <div class="custom-card position-relative">
+                        <div class="number-badge">${asset.asset_id}</div>
+                        <img src="${getAssetIcon(asset.category_id)}" class="card-img">
+                        <h5 class="card-title">${asset.name}</h5>
+                        <p class="card-text"><strong>${asset.description}</strong></p>
+                        <span class="badge ${getBadgeClass(asset.status)}">${asset.status}</span>
+                    </div>`;
+                container.appendChild(col);
+            });
+        }
+
+        function getAssetIcon(categoryId) {
+            const icons = {
+                1: '/assets/images/icons/switch.png',
+                2: '/assets/images/icons/vr.png',
+                3: '/assets/images/icons/accesspoint.png',
+                4: '/assets/images/icons/laptop.png',
+                5: '/assets/images/icons/projector.png'
+            };
+            return icons[categoryId] || '/assets/images/icons/default.png';
+        }
+
+        function getBadgeClass(status) {
+            const classes = {
+                'available': 'bg-success',
+                'pending': 'bg-warning',
+                'borrowed': 'bg-danger',
+                'disabled': 'bg-secondary'
+            };
+            return classes[status.toLowerCase()] || 'bg-info';
+        }
+
+        function searchAssets() {
+            const term = document.getElementById('searchBar').value.toLowerCase();
+            fetch('/dashboard/data')
+                .then(response => response.json())
+                .then(assets => {
+                    const filtered = assets.filter(asset => 
+                        asset.name.toLowerCase().includes(term) || 
+                        asset.description.toLowerCase().includes(term)
+                    );
+                    renderAssets(filtered);
+                });
+        }
+
+        function logoutUser() {
+            fetch('/logout', { method: 'POST' })
+                .then(() => {
+                    sessionStorage.clear();
+                    window.location.href = '/';
+                });
+        }
+    </script>
+</body>
+</html>

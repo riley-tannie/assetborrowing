@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icon -->
+    <link rel="icon" href="../public/assets/images/logo/favicon.ico" type="image/x-icon">
+
+    <!-- Lottie Animations -->
+    <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+
+    <!-- SweetAlert CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../public/css/styles.css">
+
+    <title>Request Asset</title>
+
+    <style>
+        input {
+            background-color: #f1f1f1 !important;
+            /* Light gray background for input fields */
+            border: 1px solid #ced4da !important;
+            /* Border color */
+            border-radius: 0.25rem !important;
+            /* Rounded corners */
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid d-flex justify-content-between align-items-center p-2">
+            <div class="d-flex align-items-center">
+                <img src="../public/assets/images/logo/logo.png" alt="University Logo" class="logo-img">
+            </div>
+
+            <div class="text-end">
+                <div class="navbar-text" id="userInfo">Loading...</div>
+                <a href="#" class="logout" onclick="logoutUser()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <nav class="navbar navbar-dark" id="nav">
+        <div class="container-fluid ms-5 me-5">
+            <a class="navbar-brand" href="#">Asset Borrowing System</a>
+            <ul class="nav">
+                <li class="nav-item"><a href="/dashboard" class="nav-link">Asset List</a></li>
+                <li class="nav-item"><a class="nav-link" href="/request">Request Asset</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/assets">Request Status</a></li>
+                <li class="nav-item" id="returnAssetsLink" style="display: none;">
+                    <a class="nav-link" href="/return">Return Assets</a>
+                </li>
+                <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const username = sessionStorage.getItem("username") || "Guest";
+            const userId = sessionStorage.getItem("userId") || "";
+            let userRole = sessionStorage.getItem("userRole") || "";
+
+            let userRoleFinal = ""; // Declare it here
+
+            if (userRole == "lecturer") {
+                userRoleFinal = "Arjan."; // Assign the value here
+                document.getElementById("userInfo").innerHTML = `${userRoleFinal} ${username}`;
+            } else if (userRole == "staff") {
+                userRoleFinal = "Miss.";
+                document.getElementById("userInfo").innerHTML = `${userRoleFinal} &nbsp;${username}`;
+            } else if (userRole == "student") {
+                document.getElementById("userInfo").innerHTML = `${userId} &nbsp; ${username}`;
+            }
+
+            if (userRole === 'staff') {
+                document.getElementById('returnAssetsLink').style.display = 'block';
+            }
+
+        });
+
+        function logoutUser() {
+            const role = sessionStorage.getItem("selectedRole") || "user";
+            sessionStorage.clear();
+            window.location.href = `/login?role=${role}`;
+        }
+    </script>
+
+    <div class="container">
+        <div class="row p-5">
+            <h2 class="mt-3     title">Request Asset</h2>
+            <div class="card bg-white">
+                <div class="row p-5">
+                    <div class="col-md-5 d-flex justify-content-center align-items-center">
+                        <dotlottie-player
+                            src="https://lottie.host/595dbb1a-bf96-422c-9257-6631692d0ff0/d5If1neWZU.lottie"
+                            background="transparent" speed="1" style="width: 300px; height: 300px" loop
+                            autoplay></dotlottie-player>
+                    </div>
+                    <div class="col-md-7">
+                        <form id="requestForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="studentId" class="form-label text-dark">Student ID</label>
+                                    <input type="text" class="form-control" id="studentId" name="studentId" required
+                                        readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="studentName" class="form-label text-dark">Student Name</label>
+                                    <input type="text" class="form-control" id="studentName" name="studentName" required
+                                        readonly>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label for="assetId" class="form-label text-dark">Asset ID</label>
+                                    <input type="text" class="form-control" id="assetId" name="assetId" required
+                                        readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="assetName" class="form-label text-dark">Asset Name</label>
+                                    <input type="text" class="form-control" id="assetName" name="assetName" required
+                                        readonly>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label for="borrowDate" class="form-label text-dark">Borrow Date</label>
+                                    <input type="date" class="form-control" id="borrowDate" name="borrowDate" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="returnDate" class="form-label text-dark">Return Date</label>
+                                    <input type="date" class="form-control" id="returnDate" name="returnDate" readonly
+                                        required>
+                                </div>
+                            </div>
+
+
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <label for="studentReason" class="form-label text-dark">Reason for Request</label>
+                                    <textarea class="form-control" id="studentReason" name="studentReason" rows="3"
+                                        required></textarea>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col text-end">
+                                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="assetDetails">
+        <!-- Asset details will be displayed here -->
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const username = sessionStorage.getItem("username") || "Guest";
+            const userIdRaw = sessionStorage.getItem("userId") || "";
+            const userId = userIdRaw.trim();
+
+            let formattedId = "";
+            if (/^\d{10}$/.test(userId)) {
+                formattedId = userId.replace(/^(\d{3})(\d{4})(\d{3})$/, "$1 $2 $3");
+            } else {
+                formattedId = userId;
+            }
+
+            const userRole = sessionStorage.getItem("userRole") || "";
+
+            // Update navbar user info
+            if (userRole == "lecturer") {
+                document.getElementById("userInfo").innerHTML = `Arjan. ${username}`;
+            } else if (userRole == "staff") {
+                document.getElementById("userInfo").innerHTML = `Miss. &nbsp;${username}`;
+            } else if (userRole == "student") {
+                document.getElementById("userInfo").innerHTML = `${formattedId} &nbsp; ${username}`;
+            }
+
+            // Show Return Assets link for staff
+            if (userRole === 'staff') {
+                document.getElementById('returnAssetsLink').style.display = 'block';
+            }
+
+            // Autofill Student ID and Name
+            document.getElementById("studentId").value = formattedId;
+            document.getElementById("studentName").value = username;
+
+            // Fetch asset details from API
+            const urlParams = new URLSearchParams(window.location.search);
+            const assetId = urlParams.get("asset_id");
+
+            if (assetId) {
+                fetch(`http://127.0.0.1:3000/requestPage?asset_id=${assetId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Assuming your response contains keys like asset_id, asset_name, asset_status
+                        document.getElementById("assetId").value = data.asset_id;
+                        document.getElementById("assetName").value = data.asset_name;
+                        document.getElementById("assetStatus").value = data.asset_status;
+                    })
+                    .catch(error => console.error("Error fetching asset:", error));
+            }
+        });
+
+        function logoutUser() {
+            const role = sessionStorage.getItem("selectedRole") || "user";
+            sessionStorage.clear();
+            window.location.href = `/login?role=${role}`;
+        }
+
+        // Form submission logic
+        document.getElementById("requestForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    
+    const student_id = sessionStorage.getItem("userId").trim();
+    const asset_id = document.getElementById("assetId").value;
+    const borrow_date = document.getElementById("borrowDate").value;
+    const return_date = document.getElementById("returnDate").value;
+    const student_reason = document.getElementById("studentReason").value;
+
+    fetch("/student/request-asset", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            student_id,
+            asset_id,
+            borrow_date,
+            return_date,
+            student_reason
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Request Submitted',
+                text: 'Your asset request has been submitted successfully!',
+                confirmButtonText: 'OK'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/assets';
+                }
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'An unknown error occurred. Please try again.',
+                confirmButtonText: 'OK'
+            });
+        }
+    })
+    .catch(err => {
+        console.error("Request error:", err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Request Error',
+            text: 'Something went wrong. Please try again.',
+            confirmButtonText: 'OK'
+        });
+    });
+});
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const borrowDateInput = document.getElementById("borrowDate");
+            const returnDateInput = document.getElementById("returnDate");
+        
+            // Get today's date in Thailand time zone (Asia/Bangkok)
+            const today = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
+            const todayDate = new Date(today);
+            todayDate.setHours(0, 0, 0, 0); // Reset time to midnight
+        
+            // Format the date in yyyy-mm-dd (for the input type="date" format)
+            const todayFormatted = todayDate.toISOString().split("T")[0];
+        
+            // Set the minimum selectable borrow date to today
+            borrowDateInput.setAttribute("min", todayFormatted);
+        
+            // Auto-set return date (+7 days) when borrow date changes
+            borrowDateInput.addEventListener("change", function () {
+                const borrowDate = new Date(this.value);
+                if (isNaN(borrowDate)) return;
+        
+                const returnDate = new Date(borrowDate);
+                returnDate.setDate(returnDate.getDate() + 7);
+        
+                const formattedReturnDate = returnDate.toISOString().split("T")[0];
+                returnDateInput.value = formattedReturnDate;
+        
+                // Set the minimum return date to 7 days after the borrow date
+                returnDateInput.setAttribute("min", formattedReturnDate);
+            });
+        });
+        
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const assetId = urlParams.get("asset_id");
+
+            if (assetId) {
+                fetch("api/assets")
+                    .then(response => response.json())
+                    .then(data => {
+                        // Find the asset by the asset_id
+                        const asset = data.find(item => item.asset_id == assetId);
+
+                        if (asset) {
+                            // Populate the form fields with the fetched asset data
+                            document.getElementById("assetId").value = asset.asset_id;
+                            document.getElementById("assetName").value = asset.name;
+                            document.getElementById("assetStatus").value = asset.status;
+                            // If you want to show the image, you can update an image element:
+                            // document.getElementById("assetImage").src = asset.image_path;
+                        } else {
+                            console.error("No asset found with the given ID.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error fetching asset data:", error);
+                    });
+            }
+        });
+    </script>
+
+</body>
+
+</html>

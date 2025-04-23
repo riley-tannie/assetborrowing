@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Add Category</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Icon -->
+  <link rel="icon" href="../public/assets/images/logo/favicon.ico" type="image/x-icon">
+
+  <!-- Lottie Animations -->
+  <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+
+  <!-- SweetAlert CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="../public/css/styles.css">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-custom">
+    <div class="container-fluid d-flex justify-content-between align-items-center p-2">
+      <div class="d-flex align-items-center">
+        <img src="../public/assets/images/logo/logo.png" alt="University Logo" class="logo-img">
+      </div>
+
+      <div class="text-end">
+        <div class="navbar-text" id="userInfo">Loading...</div>
+        <a href="#" class="logout" onclick="logoutUser()">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="navbar navbar-dark" id="nav">
+    <div class="container-fluid ms-5 me-5">
+      <a class="navbar-brand" href="#">Asset Borrowing System</a>
+      <ul class="nav">
+        <li class="nav-item"><a href="/dashboard" class="nav-link">Asset List</a></li>
+        <li class="nav-item" id="request" style="display: none;"><a class="nav-link" href="/request">Request
+            Asset</a></li>
+        <li class="nav-item"><a class="nav-link active" href="/assets">Request Status</a></li>
+        <li class="nav-item" id="dashboardLink" style="display:none;">
+          <a href="/list" class="nav-link">Dashboard</a>
+        </li>
+        <li class="nav-item" id="returnAssetsLink" style="display: none;">
+          <a class="nav-link" href="/return">Return Assets</a>
+        </li>
+        <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const username = sessionStorage.getItem("username") || "Guest";
+      const userId = sessionStorage.getItem("userId") || "";
+      let userRole = sessionStorage.getItem("userRole") || "";
+
+      let userRoleFinal = ""; // Declare it here
+
+      if (userRole == "lecturer") {
+        userRoleFinal = "Arjan."; // Assign the value here
+        document.getElementById("userInfo").innerHTML = `${userRoleFinal} ${username}`;
+      } else if (userRole == "staff") {
+        userRoleFinal = "Miss.";
+        document.getElementById("userInfo").innerHTML = `${userRoleFinal} &nbsp;${username}`;
+      } else if (userRole == "student") {
+        document.getElementById("userInfo").innerHTML = `${userId} &nbsp; ${username}`;
+      }
+
+      if (userRole === 'staff') {
+        document.getElementById('returnAssetsLink').style.display = 'block';
+      }
+
+    });
+
+    function logoutUser() {
+      const role = sessionStorage.getItem("selectedRole") || "user";
+      sessionStorage.clear();
+      window.location.href = `/login?role=${role}`;
+    }
+  </script>
+
+  <div class="container">
+    <h2 class="title mt-5 mb-4 pt-5">Manage Categories</h2>
+
+    <!-- Add Category Button -->
+    <a href="#" class="btn btn-primary btn-sm mb-3" onclick="showAddCategoryModal()">
+      Add Category
+    </a>
+
+    <!-- Category Table -->
+    <table class="table table-bordered table-striped" id="categoryTable" style="display: none;">
+      <thead>
+        <tr class="text-center">
+          <th>ID</th>
+          <th>Category Name</th>
+          <th>Description</th>
+          <th>Created Date</th>
+          <th>Updated Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Categories will be added dynamically -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    window.onload = fetchAndDisplayCategories;
+
+    async function fetchAndDisplayCategories() {
+      try {
+        const res = await fetch('/get-all-categories');
+        const result = await res.json();
+
+        if (result.success && Array.isArray(result.categories)) {
+          const table = document.getElementById('categoryTable');
+          const tbody = table.querySelector('tbody');
+          tbody.innerHTML = '';
+
+          result.categories.forEach(cat => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td class='text-center'>${cat.category_id}</td>
+              <td>${cat.category_name}</td>
+              <td>${cat.description}</td>
+              <td>${new Date(cat.created_at).toLocaleString()}</td>
+              <td>${new Date(cat.updated_at).toLocaleString()}</td>
+              <td class='text-center'>
+                <span class="text-warning me-2" role="button" onclick="editCategory(${cat.category_id}, '${cat.category_name}', '${cat.description}')">
+                  <i class="bi bi-pencil-square"></i>
+                </span>
+                <span class="text-danger" role="button" onclick="deleteCategory(${cat.category_id})">
+                  <i class="bi bi-trash"></i>
+                </span>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+
+          table.style.display = 'table';
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    }
+
+    // Show add modal
+    function showAddCategoryModal() {
+      Swal.fire({
+        title: 'Add New Category',
+        html: `
+          <input type="text" id="categoryName" class="form-control mb-2" placeholder="Category Name">
+          <textarea id="categoryDesc" class="form-control" placeholder="Description"></textarea>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Add',
+        preConfirm: async () => {
+          const name = document.getElementById('categoryName').value.trim();
+          const desc = document.getElementById('categoryDesc').value.trim();
+
+          if (!name) {
+            Swal.showValidationMessage('Category name is required');
+            return;
+          }
+
+          const res = await fetch('/api/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category_name: name, description: desc })
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error(data.message);
+        }
+      }).then(result => {
+        if (result.isConfirmed) {
+          Swal.fire('Success!', 'Category added.', 'success');
+          fetchAndDisplayCategories();
+        }
+      });
+    }
+
+    // Edit category
+    function editCategory(id, name, desc) {
+      Swal.fire({
+        title: 'Edit Category',
+        html: `
+          <input type="text" id="editName" class="form-control mb-2" value="${name}">
+          <textarea id="editDesc" class="form-control">${desc}</textarea>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Update',
+        preConfirm: async () => {
+          const newName = document.getElementById('editName').value.trim();
+          const newDesc = document.getElementById('editDesc').value.trim();
+          if (!newName) {
+            Swal.showValidationMessage('Category name is required');
+            return;
+          }
+
+          const res = await fetch(`/api/categories/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category_name: newName, description: newDesc })
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error(data.message);
+        }
+      }).then(result => {
+        if (result.isConfirmed) {
+          Swal.fire('Updated!', 'Category updated successfully.', 'success');
+          fetchAndDisplayCategories();
+        }
+      });
+    }
+
+    // Delete category
+    function deleteCategory(id) {
+      Swal.fire({
+        title: 'Are you sure?',
+        text: 'This category will be deleted permanently.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Delete'
+      }).then(async result => {
+        if (result.isConfirmed) {
+          const res = await fetch(`/api/categories/${id}`, {
+            method: 'DELETE'
+          });
+          const data = await res.json();
+          if (data.success) {
+            Swal.fire('Deleted!', 'Category has been deleted.', 'success');
+            fetchAndDisplayCategories();
+          } else {
+            Swal.fire('Error!', data.message || 'Failed to delete.', 'error');
+          }
+        }
+      });
+    }
+  </script>
+</body>
+
+</html>
